@@ -13,3 +13,7 @@ Mithilfe dieses Programms, kann man nach einzelnen Assets suchen und diese sich 
 Alternativ kann man sich einen Downloadlink erstellen lassen und ihn mit anderen Personen teilen.
 
 ![Screenshot vom Programm](https://i.imgur.com/Eqauhzhl.png)
+
+
+## Download
+Das Programm kann im ![Release-Bereich](https://github.com/David-Mustaang/UBSB_AssetBrowser/releases) heruntergeladen werden.
