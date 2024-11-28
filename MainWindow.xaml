@@ -1,0 +1,31 @@
+﻿<Window x:Class="UBSB_AssetBrowser.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:UBSB_AssetBrowser"
+        mc:Ignorable="d"
+        Title="U-Bahn Sim Berlin - Asset Browser" Height="808" Width="816" FontSize="18" Topmost="False" WindowStartupLocation="CenterScreen" ResizeMode="CanMinimize" Icon="/images/icon.ico">
+    <Canvas>
+        <TextBox x:Name="input_Suche" Text=" Asset suchen..." Foreground="Gray" Canvas.Left="20" Canvas.Top="20" Width="724" GotFocus="input_Suche_GotFocus" LostFocus="input_Suche_LostFocus" TextChanged="input_Suche_TextChanged"/>
+        <Button x:Name="button_clearSearch" Content="X" Foreground="Red" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" FontSize="14" Canvas.Left="754" Canvas.Top="20" Height="26" Width="26" Click="button_clearSearch_Click"/>
+        <DataGrid x:Name="datagrid_assets" Canvas.Left="20" Canvas.Top="66" Height="557" Width="760" AutoGenerateColumns="False" SelectionMode="Single" IsReadOnly="True" VerticalScrollBarVisibility="Visible" HeadersVisibility="Column" SelectionChanged="datagrid_assets_SelectionChanged">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Assetname" Binding="{Binding username}" Width="455"/>
+                <DataGridTextColumn Header="KUID" Binding="{Binding kuid}" Width="210"/>
+                <DataGridTextColumn Header="Revision" Binding="{Binding revision}" Width="75"/>
+            </DataGrid.Columns>
+        </DataGrid>
+        <Label x:Name="label_status" d:Content="Das ist ein Test" d:Foreground="#cc0000" Canvas.Left="100" Canvas.Top="643" Width="600" HorizontalContentAlignment="Center" FontWeight="DemiBold"/>
+        <Button x:Name="button_exit" Canvas.Left="140" Canvas.Top="699" Width="150" Height="50" Content="Beenden" Click="button_exit_Click"/>
+        <Button x:Name="button_link" Canvas.Left="325" Canvas.Top="699" Width="150" Height="50" Content="Link generieren" Click="button_link_Click"/>
+        <Button x:Name="button_download" Canvas.Left="510" Canvas.Top="699" Width="150" Height="50" Content="Download" Click="button_download_Click"/>
+    </Canvas>
+</Window>
+
+
+<!--    
+    d:ItemsSource="{d:SampleData ItemCount=20}
+    
+    HorizontalContentAlignment="Center" Foreground="#00cc00" FontWeight="DemiBold"
+-->
