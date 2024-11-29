@@ -9,10 +9,10 @@ Es spricht allerdings nichts dagegen, dieses Programm auch zu veröffentlichen.
 Der U-Bahn Sim Berlin ist eine Modifikation für Trainz 2009, welche die U-Bahn in Berlin simulieren und darstellen soll.
 
 ## Was macht das Programm?
-Mithilfe dieses Programms, kann man nach einzelnen Assets suchen und diese sich direkt herunterladen lassen. <br />
+Mithilfe dieses Programms, kann man nach einzelnen Assets suchen und sich diese direkt herunterladen lassen. <br />
 Alternativ kann man sich einen Downloadlink erstellen lassen und ihn mit anderen Personen teilen. 
 
-Es kann sowohl nach Namen des Objektes, als auch nach der KUID gesucht werden. <br />
+Es kann sowohl nach dem Namen des Objektes, als auch nach der KUID gesucht werden. <br />
 Auch Teileingaben sind ohne Probleme möglich.
 
 ![Screenshot vom Programm](https://i.imgur.com/Eqauhzhl.png)
