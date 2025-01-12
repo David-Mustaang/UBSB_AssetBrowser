@@ -13,16 +13,24 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
     <ApplicationIcon>images\icon.ico</ApplicationIcon>
+	  <Version>1.1.0.0</Version>
   </PropertyGroup>
 
   <ItemGroup>
     <None Remove="images\icon.ico" />
+    <None Remove="images\Splashscreen.png" />
   </ItemGroup>
 
   <ItemGroup>
     <Resource Include="images\icon.ico">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Resource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <SplashScreen Include="images\Splashscreen.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </SplashScreen>
   </ItemGroup>
 
 </Project>

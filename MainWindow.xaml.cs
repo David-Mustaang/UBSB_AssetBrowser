@@ -2,6 +2,8 @@
 using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
+using System.Reflection;
+using System.Security.Policy;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
@@ -79,13 +81,15 @@ namespace UBSB_AssetBrowser
 
         public async Task<String> FetchAssetsFromAPI()
         {
-            HttpClient httpClient = new();
+            using (HttpClient httpClient = new())
+            {
 
-            // Hole die JSON-Daten von der API
-            string jsonResponse = await httpClient.GetStringAsync(apiLink);
+                // Hole die JSON-Daten von der API
+                string jsonResponse = await httpClient.GetStringAsync(apiLink);
 
-            // Rückgabe der JSON-Daten
-            return jsonResponse;
+                // Rückgabe der JSON-Daten
+                return jsonResponse;
+            }
         }
 
         public void UpdateFilter()
@@ -111,7 +115,7 @@ namespace UBSB_AssetBrowser
             collectionView.Refresh();
         }
 
-        public async Task WaitXMilliseconds(int timer)
+        public async Task WaitMilliseconds(int timer)
         {
             await Task.Delay(timer);
         }
@@ -123,7 +127,7 @@ namespace UBSB_AssetBrowser
                 SaveFileDialog saveFileDialog = new SaveFileDialog
                 {
                     FileName = $"{downloadName}_r{downloadRevision}.zip",
-                    Filter = "Alle Dateien (*.*)|*.*",
+                    Filter = "ZIP-Dateien (*.zip)|*.zip|Alle Dateien (*.*)|*.*",
                     Title = "Asset speichern unter..."
                 };
 
@@ -133,46 +137,62 @@ namespace UBSB_AssetBrowser
                     string filePath = saveFileDialog.FileName;
                     label_status.Content = $"{downloadName} wird heruntergeladen...";
 
-                    // Deaktiviere Download-Button, bis Download abgeschlossen ist.
+                    // Deaktiviere Link und Download-Button, bis Download abgeschlossen ist.
+                    button_link.IsEnabled = false;
                     button_download.IsEnabled = false;
 
                     // Lade Asset herunter
-                    HttpClient httpClient = new();
-                    HttpResponseMessage response = await httpClient.GetAsync(downloadLink);  // Downloadlink wurde vor Methodenaufruf gesetzt
-
-                    // Wenn Download erfolgreich, dann:
-                    if (response.IsSuccessStatusCode)
+                    using (HttpClient httpClient = new())
                     {
-                        // Lese den Inhalt als Stream
-                        Stream contentStream = await response.Content.ReadAsStreamAsync();
+                        HttpResponseMessage response = await httpClient.GetAsync(downloadLink, HttpCompletionOption.ResponseHeadersRead);  // Downloadlink wurde vor Methodenaufruf gesetzt
 
-                        // Schreibe den Stream in die ausgewählte Datei
-                        FileStream fileStream = new(filePath, FileMode.Create, FileAccess.Write, FileShare.None);
-                        await contentStream.CopyToAsync(fileStream);
-                        fileStream.Close();
 
-                        // Erfolgsmeldung + Datei öffnen
-                        label_status.Content = $"{downloadName} wurde erfolgreich heruntergeladen";
-                        button_download.IsEnabled = true;
-                        await WaitXMilliseconds(500);
-
-                        Process.Start(new ProcessStartInfo
+                        // Wenn Verbindung erfolgreich, dann:
+                        if (response.IsSuccessStatusCode)
                         {
-                            FileName = filePath,
-                            UseShellExecute = true
-                        });
-                    }
+                            // Gesamtgröße der Datei (Content-Length aus dem Header)
+                            long? totalBytes = response.Content.Headers.ContentLength;
 
-                    // Wenn Download nicht erfolgreich, dann:
-                    else
-                    {
-                        MessageBox.Show($"Fehler beim Herunterladen der Datei: {response.StatusCode}", "Fehler", MessageBoxButton.OK, MessageBoxImage.Error);
-                        
-                        label_status.Content = "Der Download wurde aufgrund eines Fehlers abgebrochen!";
-                        label_status.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#dd0000"));
-                        button_download.IsEnabled = true;
-                    }
+                            // Lese den Inhalt als Stream
+                            Stream contentStream = await response.Content.ReadAsStreamAsync();
 
+                            // Öffne die Datei, in die der Inhalt geschrieben wird
+                            using (FileStream fileStream = new(filePath, FileMode.Create, FileAccess.Write, FileShare.None))
+                            {
+                                // Fortschrittsanzeige vorbereiten
+                                var progress = new Progress<int>(percent =>
+                                {
+                                    label_status.Content = $"{downloadName} wird heruntergeladen... ({percent}%)";
+                                });
+
+                                // Lade den Stream in Blöcken herunter und schreibe in die Datei
+                                await CopyToWithProgress(contentStream, fileStream, totalBytes, progress);
+                            }
+
+                            // Erfolgsmeldung + Datei öffnen
+                            label_status.Content = $"{downloadName} wurde erfolgreich heruntergeladen";
+                            button_link.IsEnabled = true;
+                            button_download.IsEnabled = true;
+                            await WaitMilliseconds(500);
+
+                            Process.Start(new ProcessStartInfo
+                            {
+                                FileName = filePath,
+                                UseShellExecute = true
+                            });
+                        }
+
+                        // Wenn Download nicht erfolgreich, dann:
+                        else
+                        {
+                            MessageBox.Show($"Fehler beim Herunterladen der Datei: {response.StatusCode}", "Fehler", MessageBoxButton.OK, MessageBoxImage.Error);
+
+                            label_status.Content = "Der Download wurde aufgrund eines Fehlers abgebrochen!";
+                            label_status.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#dd0000"));
+                            button_link.IsEnabled = true;
+                            button_download.IsEnabled = true;
+                        }
+                    }
                 }
 
                 // Wenn User im SaveFileDialog "Abbrechen" auswählt
@@ -190,15 +210,98 @@ namespace UBSB_AssetBrowser
                 MessageBox.Show($"Ein Fehler ist aufgetreten: {ex.Message}", "Fehler", MessageBoxButton.OK, MessageBoxImage.Error);
                 label_status.Content = "Der Download wurde aufgrund eines Fehlers abgebrochen!";
                 label_status.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#dd0000"));
+                button_link.IsEnabled = true;
                 button_download.IsEnabled = true;
             }
+        }
+
+        private async Task CopyToWithProgress(Stream source, Stream destination, long? totalBytes, IProgress<int> progress)
+        {
+            const int bufferSize = 8192; // 8 KB Puffergröße
+            byte[] buffer = new byte[bufferSize];
+            long totalBytesRead = 0;
+            int bytesRead;
+
+            // Solange Daten verfügbar sind, lese sie und schreibe sie in die Zieldatei
+            while ((bytesRead = await source.ReadAsync(buffer, 0, buffer.Length)) > 0)
+            {
+                // Schreibe die gelesenen Bytes in die Zieldatei
+                await destination.WriteAsync(buffer, 0, bytesRead);
+                totalBytesRead += bytesRead;
+
+                if (totalBytes.HasValue)
+                {
+                    // Berechne den Fortschritt in Prozent
+                    int progressPercentage = (int)((double)totalBytesRead / totalBytes.Value * 100);
+                    progress.Report(progressPercentage);  // Aktualisiere den Fortschritt
+                }
+            }
+        }
+
+        public class GitHubRelease
+        {
+            public string tag_name { get; set; }
+        }
+
+        private async void CheckForUpdates()
+        {
+            const string LatestReleaseUrl = "https://api.github.com/repos/David-Mustaang/UBSB_AssetBrowser/releases/latest"; // GitHub API URL für neueste Version
+
+            try
+            {
+                // Hole die aktuelle Version aus der .csproj-Datei oder Assembly
+                string currentVersionString = Assembly.GetExecutingAssembly().GetName().Version.ToString();
+
+                using (HttpClient httpClient = new())
+                {
+                    // GitHub API erfordert, dass ein User-Agent eingesetzt wird
+                    httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("request");
+                    HttpResponseMessage response = await httpClient.GetAsync(LatestReleaseUrl);
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        string jsonResponse = await response.Content.ReadAsStringAsync();
+
+                        // Deserialisiere die JSON-Antwort in ein GitHubRelease-Objekt
+                        GitHubRelease releaseData = JsonSerializer.Deserialize<GitHubRelease>(jsonResponse);
+
+                        if (releaseData != null)
+                        {
+                            string latestVersionString = releaseData.tag_name;
+
+                            // Vergleiche die Versionen
+                            Version currentVersion = new(currentVersionString);
+                            Version latestVersion = new(latestVersionString);
+                            if (latestVersion > currentVersion)
+                            {
+                                MessageBoxResult result = MessageBox.Show(
+                                    $"Es ist eine neue Version (v{latestVersionString}) verfügbar. \nMöchten Sie die neue Version herunterladen?",
+                                    "Update verfügbar", MessageBoxButton.YesNo, MessageBoxImage.Information);
+
+                                if (result == MessageBoxResult.Yes)
+                                {
+                                    Process.Start("explorer", "https://github.com/David-Mustaang/UBSB_AssetBrowser/releases/latest");  // Link zur GitHub-Release-Seite
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            catch { MessageBox.Show("Fehler", "Fehler", MessageBoxButton.OK, MessageBoxImage.Error); }
         }
 
         public MainWindow()
         {
             InitializeComponent();
+
+            // Fensterhöhe an Bildschirmgröße anpassen
+            var screenHeight = System.Windows.SystemParameters.PrimaryScreenHeight;
+            this.Height = screenHeight * 0.6;
+
             ReadJSON();
             firstInitialized = true;
+
+            CheckForUpdates();
 
             defaultSearchString = input_Suche.Text;
             // defaultStatusLabelContent in ReadJSON gesetzt
@@ -276,7 +379,7 @@ namespace UBSB_AssetBrowser
                 label_status.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#009900"));
 
                 // Nach 5 Sekunden zu altem Status-Label zurückwechseln
-                await WaitXMilliseconds(5000);
+                await WaitMilliseconds(5000);
 
                 label_status.Content = defaultStatusLabelContent;
                 label_status.Foreground = defaultStatusLabelColor;
@@ -303,7 +406,7 @@ namespace UBSB_AssetBrowser
                 await DownloadAsset();
 
                 // 5 Sekunden nach Abschluss des Downloads zu altem Label zurückwechseln
-                await WaitXMilliseconds(5000);
+                await WaitMilliseconds(5000);
 
                 label_status.Content = defaultStatusLabelContent;
                 label_status.Foreground = defaultStatusLabelColor;

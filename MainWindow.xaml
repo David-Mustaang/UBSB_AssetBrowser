@@ -5,27 +5,42 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:UBSB_AssetBrowser"
         mc:Ignorable="d"
-        Title="U-Bahn Sim Berlin - Asset Browser" Height="808" Width="816" FontSize="18" Topmost="False" WindowStartupLocation="CenterScreen" ResizeMode="CanMinimize" Icon="/images/icon.ico">
-    <Canvas>
-        <TextBox x:Name="input_Suche" Text=" Asset suchen..." Foreground="Gray" Canvas.Left="20" Canvas.Top="20" Width="724" GotFocus="input_Suche_GotFocus" LostFocus="input_Suche_LostFocus" TextChanged="input_Suche_TextChanged"/>
-        <Button x:Name="button_clearSearch" Content="X" Foreground="Red" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" FontSize="14" Canvas.Left="754" Canvas.Top="20" Height="26" Width="26" Click="button_clearSearch_Click"/>
-        <DataGrid x:Name="datagrid_assets" Canvas.Left="20" Canvas.Top="66" Height="557" Width="760" AutoGenerateColumns="False" SelectionMode="Single" IsReadOnly="True" VerticalScrollBarVisibility="Visible" HeadersVisibility="Column" SelectionChanged="datagrid_assets_SelectionChanged">
+        Title="U-Bahn Sim Berlin - Asset Browser" d:Height="850" MinHeight="350" MinWidth="816" MaxWidth="816" FontSize="18" Topmost="False" WindowStartupLocation="CenterScreen" Icon="/images/icon.ico">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <!-- Suchzeile -->
+            <RowDefinition Height="*"/>
+            <!-- DataGrid -->
+            <RowDefinition Height="Auto"/>
+            <!-- Statuszeile -->
+            <RowDefinition Height="Auto"/>
+            <!-- Buttons -->
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <!-- Hauptbereich -->
+            <ColumnDefinition Width="Auto"/>
+            <!-- Button ClearSearch -->
+        </Grid.ColumnDefinitions>
+
+        <TextBox x:Name="input_Suche" Text=" Asset suchen..." Foreground="Gray" Grid.Row="0" Grid.Column="0" HorizontalAlignment="Stretch" Margin="0,0,10,0" GotFocus="input_Suche_GotFocus" LostFocus="input_Suche_LostFocus" TextChanged="input_Suche_TextChanged"/>
+        <Button x:Name="button_clearSearch" Content="X" Foreground="Red" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" HorizontalAlignment="Right" FontSize="14" Grid.Row="0" Grid.Column="1" Height="26" Width="26" Click="button_clearSearch_Click"/>
+
+        <DataGrid x:Name="datagrid_assets" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,20,0,20" AutoGenerateColumns="False" SelectionMode="Single" IsReadOnly="True" VerticalScrollBarVisibility="Visible" HeadersVisibility="Column" SelectionChanged="datagrid_assets_SelectionChanged">
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Assetname" Binding="{Binding username}" Width="455"/>
                 <DataGridTextColumn Header="KUID" Binding="{Binding kuid}" Width="210"/>
                 <DataGridTextColumn Header="Revision" Binding="{Binding revision}" Width="75"/>
             </DataGrid.Columns>
         </DataGrid>
-        <Label x:Name="label_status" d:Content="Das ist ein Test" d:Foreground="#cc0000" Canvas.Left="100" Canvas.Top="643" Width="600" HorizontalContentAlignment="Center" FontWeight="DemiBold"/>
-        <Button x:Name="button_exit" Canvas.Left="140" Canvas.Top="699" Width="150" Height="50" Content="Beenden" Click="button_exit_Click"/>
-        <Button x:Name="button_link" Canvas.Left="325" Canvas.Top="699" Width="150" Height="50" Content="Link generieren" Click="button_link_Click"/>
-        <Button x:Name="button_download" Canvas.Left="510" Canvas.Top="699" Width="150" Height="50" Content="Download" Click="button_download_Click"/>
-    </Canvas>
+
+        <Label x:Name="label_status" d:Content="Das ist ein Test" d:Foreground="#cc0000" Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" Width="Auto" Margin="20,0,20,0" HorizontalContentAlignment="Center" FontWeight="DemiBold"/>
+
+        <StackPanel Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,20,0,0" Orientation="Horizontal" HorizontalAlignment="Center">
+            <Button x:Name="button_exit" Margin="0,0,20,0" Width="150" Height="50" Content="Beenden" Click="button_exit_Click"/>
+            <Button x:Name="button_link" Margin="20,0,20,0" Width="150" Height="50" Content="Link generieren" Click="button_link_Click"/>
+            <Button x:Name="button_download" Margin="20,0,0,0" Width="150" Height="50" Content="Download" Click="button_download_Click"/>
+        </StackPanel>
+    </Grid>
 </Window>
-
-
-<!--    
-    d:ItemsSource="{d:SampleData ItemCount=20}
-    
-    HorizontalContentAlignment="Center" Foreground="#00cc00" FontWeight="DemiBold"
--->
